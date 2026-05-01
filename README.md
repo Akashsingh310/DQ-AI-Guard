@@ -91,8 +91,6 @@ Launch the interactive dashboard:
 streamlit run src/dashboard/app.py
 ```
 
-Open your browser at http://localhost:8501
-
 ### Features
 
 - **Sidebar Filters**  
