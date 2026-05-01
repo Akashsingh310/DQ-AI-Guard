@@ -23,7 +23,7 @@ The system ingests CSV files, runs predefined quality checks, and on failure aut
 
 ### Prerequisites
 - Python 3.11 or 3.12
-- pip or conda
+- pip
 - Gemini API key (or Grok API key)
 
 ### Clone the Repository
