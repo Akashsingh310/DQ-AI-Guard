@@ -1,5 +1,5 @@
 """
-DQ AI Guard JSON reports.
+DQ AI Guard Dashboard
 """
 
 from __future__ import annotations
@@ -24,261 +24,306 @@ from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-# ---------------------------------------------------------------------------
-# Page config – theme enforced by config.toml
-# ---------------------------------------------------------------------------
+# ------------------------------------------------------------
+# Page Config
+# ------------------------------------------------------------
 st.set_page_config(
     page_title="DQ AI Guard | Dashboard",
-    layout="wide",
-    initial_sidebar_state="expanded",
-    menu_items={
-        "Get Help": None,
-        "Report a bug": None,
-        "About": "Data Quality AI Guard – Production Data Monitoring",
-    },
+    layout="wide"
 )
 
-st.markdown(
-    """
-    <style>
-        header, footer {visibility: hidden;}
-        div[data-testid="metric-container"] {
-            background-color: #1A1C23;
-            border-radius: 8px;
-            padding: 0.5rem;
-        }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+st.markdown("""
+<style>
+header, footer {visibility: hidden;}
+div[data-testid="metric-container"] {
+    background-color: #1A1C23;
+    border-radius: 10px;
+    padding: 0.8rem;
+}
+</style>
+""", unsafe_allow_html=True)
 
-# ---------------------------------------------------------------------------
-# Data loading
-# ---------------------------------------------------------------------------
+# ------------------------------------------------------------
+# Data Load
+# ------------------------------------------------------------
 @st.cache_data(ttl=30)
 def load_reports(results_dir: Path) -> list[dict[str, Any]]:
-    """Load all JSON reports from the results directory."""
     reports = []
+
     if not results_dir.exists():
         return reports
 
-    for fpath in sorted(results_dir.glob("dq_report_*.json"), reverse=True):
+    for f in sorted(results_dir.glob("dq_report_*.json"), reverse=True):
         try:
-            with fpath.open("r", encoding="utf-8") as fh:
-                report = json.load(fh)
-            report["_file"] = fpath.name
-            ts_str = report.get("generated_at") or report.get("validation", {}).get("run_timestamp")
-            if ts_str:
-                ts_str = ts_str.replace("Z", "+00:00")
-                report["_timestamp"] = datetime.fromisoformat(ts_str)
+            with f.open("r") as fh:
+                r = json.load(fh)
+
+            r["_file"] = f.name
+
+            ts = r.get("generated_at") or r.get("validation", {}).get("run_timestamp")
+            if ts:
+                ts = ts.replace("Z", "+00:00")
+                r["_timestamp"] = datetime.fromisoformat(ts)
             else:
-                report["_timestamp"] = datetime(1970, 1, 1, tzinfo=timezone.utc)
-            reports.append(report)
-        except Exception as exc:
-            logger.error("Skipping %s: %s", fpath, exc)
+                r["_timestamp"] = datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+            reports.append(r)
+
+        except Exception as e:
+            logger.error(f"Skipping {f}: {e}")
+
     return reports
 
 
-def build_summary_df(reports: list[dict]) -> pd.DataFrame:
-    """Flatten reports into a table suitable for trend views."""
+def build_df(reports):
     rows = []
     for r in reports:
         val = r.get("validation", {})
         ai = r.get("ai_analysis", {})
+
         rows.append({
             "Timestamp": r["_timestamp"],
-            "Source File": val.get("source_file", "N/A"),
+            "Dataset": val.get("source_file"),
             "File": r["_file"],
-            "Total Checks": val.get("total_checks"),
             "Passed": val.get("passed_checks"),
             "Failed": val.get("failed_checks"),
-            "Overall Success": val.get("overall_success"),
-            "AI Health Score": ai.get("data_health_score"),
-            "AI Severity": ai.get("overall_severity", "N/A").upper(),
+            "Success": val.get("overall_success"),
+            "Health": ai.get("data_health_score"),
+            "Severity": ai.get("overall_severity", "N/A").upper()
         })
+
     return pd.DataFrame(rows).sort_values("Timestamp", ascending=False)
 
 
-# ---------------------------------------------------------------------------
-# Main application
-# ---------------------------------------------------------------------------
-def main():
-    st.title("DQ AI Guard – Quality Monitoring")
-    st.caption("Continuous validation and AI‑powered root‑cause analysis across datasets.")
+# ------------------------------------------------------------
+# Helper: Determine line colour from latest health score
+# ------------------------------------------------------------
+def _health_line_colour(df: pd.DataFrame) -> str:
+    """Return a colour for the health trend line based on the latest health score."""
+    if df.empty or df["Health"].isna().all():
+        return "#94A3B8"           # neutral grey if no data
 
-   
-    try:
-        raw_config = load_config()
-        datasets = raw_config.get("datasets", [])
-       
-        results_dir = Path(datasets[0].get("results_dir", "results")) if datasets else Path("results")
-    except Exception as exc:
-        st.error(f"Configuration error: {exc}")
-        return
+    latest = df["Health"].iloc[0]
+    if latest < 50:
+        return "#F87171"           # red
+    elif latest < 80:
+        return "#FBBF24"           # yellow / orange
+    else:
+        return "#4ADE80"           # green
+
+
+# ------------------------------------------------------------
+# Main
+# ------------------------------------------------------------
+def main():
+    st.title("DQ AI Guard Dashboard")
+    st.caption("Data Quality Monitoring with AI Diagnostics")
+
+    config = load_config()
+    datasets = config.get("datasets", [])
+    results_dir = Path(datasets[0].get("results_dir", "results")) if datasets else Path("results")
 
     reports = load_reports(results_dir)
 
     if not reports:
-        st.info("No reports found. Run the pipeline to populate results.")
+        st.info("No reports available.")
         return
 
-    df = build_summary_df(reports)
+    df = build_df(reports)
 
-   
-    source_files = sorted(df["Source File"].unique())
-    multiple_sources = len(source_files) > 1
-
-   
+    # --------------------------------------------------------
+    # Sidebar
+    # --------------------------------------------------------
     st.sidebar.header("Filters")
 
-    if multiple_sources:
-        selected_source = st.sidebar.selectbox("Dataset", options=source_files, index=0)
-        df = df[df["Source File"] == selected_source]
+    if len(df["Dataset"].unique()) > 1:
+        ds = st.sidebar.selectbox("Dataset", sorted(df["Dataset"].unique()))
+        df = df[df["Dataset"] == ds]
 
-    time_range = st.sidebar.selectbox(
-        "Period",
-        ["All time", "Last 7 days", "Last 30 days"],
-        index=0,
-    )
+    time_range = st.sidebar.selectbox("Time Range", ["All", "7D", "30D"])
+
     now = datetime.now(timezone.utc)
-    if time_range == "Last 7 days":
-        cutoff = now - pd.Timedelta(days=7)
-        df = df[df["Timestamp"] >= cutoff]
-    elif time_range == "Last 30 days":
-        cutoff = now - pd.Timedelta(days=30)
-        df = df[df["Timestamp"] >= cutoff]
 
-    show_successful = st.sidebar.checkbox("Show successful runs", value=True)
-    if not show_successful:
-        df = df[df["Overall Success"] == False]
+    if time_range == "7D":
+        df = df[df["Timestamp"] >= now - pd.Timedelta(days=7)]
+    elif time_range == "30D":
+        df = df[df["Timestamp"] >= now - pd.Timedelta(days=30)]
 
-    
+    if not st.sidebar.checkbox("Include Successful", True):
+        df = df[df["Success"] == False]
+
+    # Latest report
+    latest = None
     if not df.empty:
         latest_file = df.iloc[0]["File"]
-        latest_report = next((r for r in reports if r["_file"] == latest_file), None)
-    else:
-        latest_report = None
+        latest = next((r for r in reports if r["_file"] == latest_file), None)
 
-    
-    col1, col2, col3, col4 = st.columns(4)
-    total_runs = len(df)
-    failed_runs = len(df[df["Overall Success"] == False])
-    latest_health = df["AI Health Score"].iloc[0] if not df.empty else None
-    latest_severity = df["AI Severity"].iloc[0] if not df.empty else "N/A"
+    # --------------------------------------------------------
+    # KPI
+    # --------------------------------------------------------
+    c1, c2, c3, c4 = st.columns(4)
 
-    col1.metric("Total Runs", total_runs)
-    col2.metric("Failed Runs", failed_runs, delta=None)
-    col3.metric("Latest Health Score", f"{latest_health}/100" if latest_health is not None else "N/A")
-    col4.metric("Latest Severity", latest_severity)
+    c1.metric("Total Runs", len(df))
+    c2.metric("Failed Runs", len(df[df["Success"] == False]))
+
+    health = df["Health"].iloc[0] if not df.empty else None
+    sev = df["Severity"].iloc[0] if not df.empty else "N/A"
+
+    c3.metric("Health Score", f"{health}/100" if health else "N/A")
+    c4.metric("Severity", sev)
 
     st.markdown("---")
 
-    
-    st.subheader("Data Health Score Over Time")
-    trend_df = df.dropna(subset=["AI Health Score"]).sort_values("Timestamp")
+    # --------------------------------------------------------
+    # Trends
+    # --------------------------------------------------------
+    st.subheader("Trends Overview")
+
+    col1, col2 = st.columns(2)
+
+    # --- Health trend (line chart) ---
+    trend_df = df.dropna(subset=["Health"]).sort_values("Timestamp")
+
     if not trend_df.empty:
-        fig = px.line(
-            trend_df,
-            x="Timestamp",
-            y="AI Health Score",
-            markers=True,
-            title="AI‑driven health score (0 = critical, 100 = clean)",
-            labels={"AI Health Score": "Health Score", "Timestamp": ""},
+        line_colour = _health_line_colour(trend_df)
+
+        fig_line = go.Figure()
+        fig_line.add_trace(
+            go.Scatter(
+                x=trend_df["Timestamp"],
+                y=trend_df["Health"],
+                mode="lines+markers",
+                line=dict(color=line_colour, width=2),
+                marker=dict(color=line_colour, size=6),
+                name="Health Score",
+            )
+        )
+        fig_line.update_layout(
             template="plotly_dark",
+            xaxis_title="",
+            yaxis_title="Health Score",
+            yaxis_range=[0, 105],
         )
-        fig.add_hline(y=80, line_dash="dot", line_color="green", annotation_text="Healthy")
-        fig.add_hline(y=50, line_dash="dot", line_color="orange", annotation_text="Warning")
-        fig.update_layout(margin=dict(t=30, b=10))
-        st.plotly_chart(fig, use_container_width=True)
+        col1.plotly_chart(fig_line, use_container_width=True, key="health_line")
     else:
-        st.info("No health score data for the selected period.")
+        col1.info("No health score data available.")
 
-    
-    st.subheader("Latest Validation Run")
-    if latest_report:
-        val = latest_report.get("validation", {})
-        passed = val.get("passed_checks", 0)
-        failed = val.get("failed_checks", 0)
-        overall = val.get("overall_success")
+    # --- Pass / Fail bar chart ---
+    df_bar = df.copy()
 
-        col_a, col_b = st.columns([1, 2])
-        fig_pie = go.Figure(
-            data=[
-                go.Pie(
-                    labels=["Passed", "Failed"],
-                    values=[passed, failed],
-                    hole=0.4,
-                    marker_colors=["#00CC96", "#EF553B"],
-                )
-            ]
+    if not df_bar.empty:
+        df_bar["Date"] = pd.to_datetime(df_bar["Timestamp"]).dt.date
+        df_bar["Success"] = df_bar["Success"].astype(str).str.lower().map({
+            "true": True, "false": False
+        })
+        df_bar = df_bar[df_bar["Success"].isin([True, False])]
+
+        agg = (
+            df_bar.groupby(["Date", "Success"])
+            .size()
+            .unstack(fill_value=0)
+            .rename(columns={True: "Passed", False: "Failed"})
+            .reset_index()
         )
-        fig_pie.update_layout(margin=dict(t=0, b=0, l=0, r=0), template="plotly_dark")
-        col_a.plotly_chart(fig_pie, use_container_width=True)
 
-        col_b.write(f"**Run timestamp:** {val.get('run_timestamp', 'N/A')}")
-        col_b.write(f"**Total checks:** {passed + failed}")
-        col_b.write(f"**Passed:** {passed} | **Failed:** {failed}")
-        status_text = "PASSED" if overall else "FAILED"
-        status_color = "green" if overall else "red"
-        col_b.markdown(f"**Overall status:** <span style='color:{status_color};font-weight:bold;'>{status_text}</span>", unsafe_allow_html=True)
+        fig_bar = go.Figure()
+
+        # Always add traces but hide empty ones with a condition
+        has_passed = "Passed" in agg.columns and agg["Passed"].sum() > 0
+        has_failed = "Failed" in agg.columns and agg["Failed"].sum() > 0
+
+        if has_passed:
+            fig_bar.add_bar(
+                x=agg["Date"], y=agg["Passed"],
+                name="Passed",
+                marker_color="#22C55E",        # green 
+            )
+
+        if has_failed:
+            fig_bar.add_bar(
+                x=agg["Date"], y=agg["Failed"],
+                name="Failed",
+                marker_color="#3B82F6",        # blue
+            )
+
+        fig_bar.update_layout(
+            barmode="stack",
+            template="plotly_dark",
+            xaxis_title="Date",
+            yaxis_title="Runs",
+        )
+
+        col2.plotly_chart(fig_bar, use_container_width=True, key="pass_fail_bar")
     else:
-        st.info("No runs available for the selected filters.")
+        col2.info("No run count data.")
 
+    # --------------------------------------------------------
+    # Failed Checks
+    # --------------------------------------------------------
+    st.subheader("Failed Checks Analysis")
 
-    st.subheader("Failed Checks (Latest Run)")
-    if latest_report:
-        failed_details = [r for r in latest_report["validation"].get("results", []) if not r.get("success")]
-        if failed_details:
-            fail_df = pd.DataFrame(failed_details)[
-                ["check_name", "failed_count", "total_count", "percentage_failed"]
+    if latest:
+        failures = [
+            r for r in latest["validation"].get("results", [])
+            if not r.get("success")
+        ]
+
+        if failures:
+            fail_df = pd.DataFrame(failures)[
+                ["check_name", "failed_count", "percentage_failed"]
             ]
-            fail_df.columns = ["Check", "Failed", "Total", "% Failed"]
-            st.dataframe(fail_df, use_container_width=True)
-        else:
-            st.success("All checks passed in this run.")
-    else:
-        st.info("No data.")
 
-    
-    st.subheader("AI Root‑Cause Analysis (Latest Run)")
-    if latest_report:
-        ai = latest_report.get("ai_analysis", {})
-        if ai.get("error"):
-            st.warning(f"AI analysis unavailable: {ai.get('reason')}")
-        else:
-            st.write(f"**Summary:** {ai.get('analysis_summary', 'N/A')}")
-            issues = ai.get("issues", [])
-            if issues:
-                for idx, issue in enumerate(issues, 1):
-                    sev = issue.get("severity", "N/A").upper()
-                    check = issue.get("check_name", "N/A")
-                    with st.expander(f"{idx}. {sev} – {check}"):
-                        st.write(f"**Issue:** {issue.get('issue_summary', 'N/A')}")
-                        st.write(f"**Root cause:** {issue.get('root_cause', 'N/A')}")
-                        st.write(f"**Recommended fix:** {issue.get('recommended_fix', 'N/A')}")
-                        if col := issue.get("affected_column"):
-                            st.write(f"**Affected column:** {col}")
-                        if examples := issue.get("example_bad_values"):
-                            st.write(f"**Example bad values:** {', '.join(map(str, examples))}")
-            else:
-                st.info("No issues reported by AI.")
-    else:
-        st.info("No data.")
+            fail_df.columns = ["Check", "Failed", "Failure %"]
+            fail_df = fail_df.sort_values("Failed", ascending=False)
 
-   
+            col5, col6 = st.columns(2)
+
+            col5.dataframe(fail_df, use_container_width=True)
+
+            fig_fail = px.bar(
+                fail_df,
+                x="Check", y="Failed",
+                template="plotly_dark",
+                color_discrete_sequence=["#3B82F6"]   # red for failures
+            )
+            fig_fail.update_layout(xaxis_tickangle=-30)
+            col6.plotly_chart(fig_fail, use_container_width=True, key="fail_bar")
+
+        else:
+            st.success("No failed checks detected.")
+
+    # --------------------------------------------------------
+    # AI Analysis
+    # --------------------------------------------------------
+    st.subheader("AI Root Cause Analysis")
+
+    if latest:
+        ai = latest.get("ai_analysis", {})
+
+        st.write(ai.get("analysis_summary", "No summary available"))
+
+        for i, issue in enumerate(ai.get("issues", []), 1):
+            with st.expander(f"Issue {i}: {issue.get('check_name')}"):
+                st.write(f"Severity: {issue.get('severity')}")
+                st.write(f"Root Cause: {issue.get('root_cause')}")
+                st.write(f"Fix: {issue.get('recommended_fix')}")
+
+    # --------------------------------------------------------
+    # Historical Runs
+    # --------------------------------------------------------
     st.subheader("Historical Runs")
-    def color_failed(val: bool) -> str:
-        return "color: red" if not val else "color: green"
-    styled_df = df.style.applymap(color_failed, subset=["Overall Success"])
-    st.dataframe(styled_df, use_container_width=True)
+    st.dataframe(df, use_container_width=True)
 
-   
+    # --------------------------------------------------------
+    # Download
+    # --------------------------------------------------------
     csv = df.to_csv(index=False).encode("utf-8")
+
     st.download_button(
-        label="Download filtered runs as CSV",
-        data=csv,
-        file_name=f"dq_runs_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-        mime="text/csv",
+        "Download CSV",
+        csv,
+        "dq_runs.csv",
+        "text/csv"
     )
 
 
