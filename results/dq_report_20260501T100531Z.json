@@ -1,0 +1,195 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-05-01T10:05:31.601029+00:00",
+  "validation": {
+    "run_timestamp": "2026-05-01T10:05:31.600745+00:00",
+    "total_checks": 15,
+    "passed_checks": 15,
+    "failed_checks": 0,
+    "overall_success": true,
+    "results": [
+      {
+        "check_name": "schema::required_columns",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 6,
+        "percentage_failed": 0.0,
+        "details": {
+          "missing_columns": []
+        }
+      },
+      {
+        "check_name": "null::customer_id",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "column": "customer_id",
+          "actual_null_pct": 0.0,
+          "threshold_pct": 5.0
+        }
+      },
+      {
+        "check_name": "null::age",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "column": "age",
+          "actual_null_pct": 0.0,
+          "threshold_pct": 5.0
+        }
+      },
+      {
+        "check_name": "null::salary",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "column": "salary",
+          "actual_null_pct": 0.0,
+          "threshold_pct": 5.0
+        }
+      },
+      {
+        "check_name": "null::email",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "column": "email",
+          "actual_null_pct": 0.0,
+          "threshold_pct": 5.0
+        }
+      },
+      {
+        "check_name": "null::signup_date",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "column": "signup_date",
+          "actual_null_pct": 0.0,
+          "threshold_pct": 5.0
+        }
+      },
+      {
+        "check_name": "null::country",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "column": "country",
+          "actual_null_pct": 0.0,
+          "threshold_pct": 5.0
+        }
+      },
+      {
+        "check_name": "duplicate::all_columns",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "actual_duplicate_pct": 0.0,
+          "threshold_pct": 2.0
+        }
+      },
+      {
+        "check_name": "type::numeric::customer_id",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "column": "customer_id",
+          "non_numeric_pct": 0.0,
+          "threshold_pct": 0.0
+        }
+      },
+      {
+        "check_name": "type::numeric::age",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "column": "age",
+          "non_numeric_pct": 0.0,
+          "threshold_pct": 0.0
+        }
+      },
+      {
+        "check_name": "type::numeric::salary",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "column": "salary",
+          "non_numeric_pct": 0.0,
+          "threshold_pct": 0.0
+        }
+      },
+      {
+        "check_name": "type::date::signup_date",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "column": "signup_date",
+          "unparsable_pct": 0.0
+        }
+      },
+      {
+        "check_name": "pattern::email",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "column": "email",
+          "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+        }
+      },
+      {
+        "check_name": "range::age",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "column": "age",
+          "min_allowed": 0,
+          "max_allowed": 120
+        }
+      },
+      {
+        "check_name": "range::salary",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "column": "salary",
+          "min_allowed": 0,
+          "max_allowed": 1000000
+        }
+      }
+    ],
+    "source_file": "sample_data_3"
+  },
+  "ai_analysis": {
+    "analysis_summary": "All validation checks passed. No issues detected.",
+    "issues": [],
+    "overall_severity": "low",
+    "data_health_score": 100
+  }
+}

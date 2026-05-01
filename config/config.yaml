@@ -1,0 +1,54 @@
+data:
+  input_file: "data/sample_data.csv" 
+  results_dir: "results"
+
+validation:
+  thresholds:
+    max_null_percentage: 0.05
+    max_duplicate_percentage: 0.02
+    max_non_numeric_percentage: 0.00
+  columns:
+    required:
+      - customer_id
+      - age
+      - salary
+      - email
+      - signup_date
+      - country
+    numeric:
+      - customer_id
+      - age
+      - salary
+    date:
+      - signup_date
+  ranges:
+    age:
+      min: 0
+      max: 120
+    salary:
+      min: 0
+      max: 1000000
+  patterns:
+    email: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+
+ai:
+  provider: "gemini"
+  model:
+    gemini: "models/gemini-2.5-flash"
+    grok: "grok-3-latest"
+  max_tokens: 8096
+  temperature: 0.1
+  enabled: true
+  retry_attempts: 2
+  retry_delay_seconds: 3
+  sample_rows: 10
+
+reporting:
+  console:
+    width: 80
+    show_passed_checks: true
+  json:
+    indent: 2
+
+logging:
+  level: "INFO"

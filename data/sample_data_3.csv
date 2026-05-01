@@ -1,0 +1,11 @@
+customer_id,age,salary,email,signup_date,country
+1001,28,45000,john.doe@example.com,2023-01-15,US
+1002,34,62000,jane.s@example.org,2023-02-20,UK
+1003,41,58000,alice@company.com,2023-03-10,DE
+1004,52,95000,bob.m@example.net,2023-04-05,FR
+1005,28,50000,charlie@data.io,2023-05-12,US
+1006,67,88500,diana@example.com,2023-06-01,JP
+1007,39,73000,evan@example.co,2023-07-22,CA
+1008,45,81000,fiona@example.au,2023-08-05,UK
+1009,31,47000,george@example.in,2023-09-18,IN
+1010,55,99000,hannah@example.br,2023-10-30,BR

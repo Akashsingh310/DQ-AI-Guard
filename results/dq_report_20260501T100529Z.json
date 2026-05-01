@@ -1,0 +1,283 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-05-01T10:05:29.063609+00:00",
+  "validation": {
+    "run_timestamp": "2026-05-01T10:04:43.355607+00:00",
+    "total_checks": 15,
+    "passed_checks": 6,
+    "failed_checks": 9,
+    "overall_success": false,
+    "results": [
+      {
+        "check_name": "schema::required_columns",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 6,
+        "percentage_failed": 0.0,
+        "details": {
+          "missing_columns": []
+        }
+      },
+      {
+        "check_name": "null::customer_id",
+        "success": false,
+        "failed_count": 1,
+        "total_count": 10,
+        "percentage_failed": 10.0,
+        "details": {
+          "column": "customer_id",
+          "actual_null_pct": 10.0,
+          "threshold_pct": 5.0
+        }
+      },
+      {
+        "check_name": "null::age",
+        "success": false,
+        "failed_count": 1,
+        "total_count": 10,
+        "percentage_failed": 10.0,
+        "details": {
+          "column": "age",
+          "actual_null_pct": 10.0,
+          "threshold_pct": 5.0
+        }
+      },
+      {
+        "check_name": "null::salary",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "column": "salary",
+          "actual_null_pct": 0.0,
+          "threshold_pct": 5.0
+        }
+      },
+      {
+        "check_name": "null::email",
+        "success": false,
+        "failed_count": 1,
+        "total_count": 10,
+        "percentage_failed": 10.0,
+        "details": {
+          "column": "email",
+          "actual_null_pct": 10.0,
+          "threshold_pct": 5.0
+        }
+      },
+      {
+        "check_name": "null::signup_date",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "column": "signup_date",
+          "actual_null_pct": 0.0,
+          "threshold_pct": 5.0
+        }
+      },
+      {
+        "check_name": "null::country",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "column": "country",
+          "actual_null_pct": 0.0,
+          "threshold_pct": 5.0
+        }
+      },
+      {
+        "check_name": "duplicate::all_columns",
+        "success": false,
+        "failed_count": 1,
+        "total_count": 10,
+        "percentage_failed": 10.0,
+        "details": {
+          "actual_duplicate_pct": 10.0,
+          "threshold_pct": 2.0
+        }
+      },
+      {
+        "check_name": "type::numeric::customer_id",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "column": "customer_id",
+          "non_numeric_pct": 0.0,
+          "threshold_pct": 0.0
+        }
+      },
+      {
+        "check_name": "type::numeric::age",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "column": "age",
+          "non_numeric_pct": 0.0,
+          "threshold_pct": 0.0
+        }
+      },
+      {
+        "check_name": "type::numeric::salary",
+        "success": false,
+        "failed_count": 1,
+        "total_count": 10,
+        "percentage_failed": 10.0,
+        "details": {
+          "column": "salary",
+          "non_numeric_pct": 10.0,
+          "threshold_pct": 0.0
+        }
+      },
+      {
+        "check_name": "type::date::signup_date",
+        "success": false,
+        "failed_count": 1,
+        "total_count": 10,
+        "percentage_failed": 10.0,
+        "details": {
+          "column": "signup_date",
+          "unparsable_pct": 10.0
+        }
+      },
+      {
+        "check_name": "pattern::email",
+        "success": false,
+        "failed_count": 1,
+        "total_count": 9,
+        "percentage_failed": 11.1111,
+        "details": {
+          "column": "email",
+          "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+        }
+      },
+      {
+        "check_name": "range::age",
+        "success": false,
+        "failed_count": 2,
+        "total_count": 10,
+        "percentage_failed": 20.0,
+        "details": {
+          "column": "age",
+          "min_allowed": 0,
+          "max_allowed": 120
+        }
+      },
+      {
+        "check_name": "range::salary",
+        "success": false,
+        "failed_count": 1,
+        "total_count": 10,
+        "percentage_failed": 10.0,
+        "details": {
+          "column": "salary",
+          "min_allowed": 0,
+          "max_allowed": 1000000
+        }
+      }
+    ],
+    "source_file": "sample_data_2"
+  },
+  "ai_analysis": {
+    "analysis_summary": "The dataset exhibits critical data quality issues including missing primary keys, duplicate records, and severe data type and format inconsistencies across multiple columns, indicating significant upstream data entry or pipeline processing flaws.",
+    "issues": [
+      {
+        "check_name": "null::customer_id",
+        "issue_summary": "The `customer_id` column contains null values, which is critical as it serves as a primary identifier for records.",
+        "root_cause": "Upstream data source allows nulls for `customer_id` or an extraction process failed to retrieve the identifier for some records.",
+        "severity": "high",
+        "recommended_fix": "Enforce a non-null constraint on `customer_id` at the data source level. If not possible, implement a data ingestion rule to reject records with null `customer_id` or generate a unique fallback identifier.",
+        "affected_column": "customer_id",
+        "example_bad_values": [
+          null
+        ]
+      },
+      {
+        "check_name": "duplicate::all_columns",
+        "issue_summary": "Duplicate records exist across all columns, specifically for customer '2006', leading to inflated counts and incorrect aggregations in downstream systems.",
+        "root_cause": "Upstream system generating duplicate entries or an ingestion process that lacks idempotency, allowing the same record to be processed multiple times.",
+        "severity": "high",
+        "recommended_fix": "Implement a deduplication step during data ingestion, using a combination of columns (e.g., `customer_id`, `signup_date`, `email`) as a natural key to identify and remove duplicates.",
+        "affected_column": null,
+        "example_bad_values": [
+          {
+            "customer_id": "2006",
+            "age": "64",
+            "salary": "88500",
+            "email": "dup@example.com",
+            "signup_date": "2024-07-22",
+            "country": "US"
+          }
+        ]
+      },
+      {
+        "check_name": "type::numeric::salary",
+        "issue_summary": "The `salary` column contains non-numeric values (e.g., 'not_a_number'), preventing proper numerical operations and causing downstream type conversion errors.",
+        "root_cause": "Upstream system allowing free-form text input for a numeric field or incorrect data type mapping during extraction.",
+        "severity": "high",
+        "recommended_fix": "Implement strict schema validation and type casting for the `salary` column during ingestion, rejecting or quarantining records where `salary` is not a valid number.",
+        "affected_column": "salary",
+        "example_bad_values": [
+          "not_a_number"
+        ]
+      },
+      {
+        "check_name": "type::date::signup_date",
+        "issue_summary": "The `signup_date` column contains inconsistent date formats (e.g., 'YYYY/MM/DD' instead of 'YYYY-MM-DD'), leading to parsing failures in downstream systems.",
+        "root_cause": "Upstream system storing dates in multiple formats or inconsistent data entry practices.",
+        "severity": "high",
+        "recommended_fix": "Standardize the date format at the source system to 'YYYY-MM-DD'. If not feasible, implement robust date parsing logic during ingestion that can handle all expected date formats (e.g., 'YYYY-MM-DD', 'YYYY/MM/DD').",
+        "affected_column": "signup_date",
+        "example_bad_values": [
+          "2024/04/20"
+        ]
+      },
+      {
+        "check_name": "null::age",
+        "issue_summary": "The `age` column contains null values and values outside the expected range (0-120), specifically negative and excessively high ages, impacting demographic analysis and business logic.",
+        "root_cause": "Lack of validation at the data source allowing nulls, negative values, or excessively high values for age.",
+        "severity": "medium",
+        "recommended_fix": "Implement data validation at the source to ensure `age` is non-null and within a reasonable range (e.g., 0-120). During ingestion, apply a transformation to handle nulls (e.g., imputation) and flag/quarantine out-of-range values.",
+        "affected_column": "age",
+        "example_bad_values": [
+          null,
+          "-22",
+          "200"
+        ]
+      },
+      {
+        "check_name": "null::email",
+        "issue_summary": "The `email` column contains null values and entries that do not conform to a standard email pattern, affecting communication and user identification processes.",
+        "root_cause": "Lack of validation at the data source allowing nulls or malformed email addresses.",
+        "severity": "medium",
+        "recommended_fix": "Implement client-side and server-side validation for email format and non-null constraint at the point of data entry. During ingestion, clean or quarantine records with invalid email formats.",
+        "affected_column": "email",
+        "example_bad_values": [
+          null,
+          "invalid_email"
+        ]
+      },
+      {
+        "check_name": "range::salary",
+        "issue_summary": "The `salary` column contains values exceeding the maximum allowed threshold (1,000,000), potentially skewing financial metrics and aggregations.",
+        "root_cause": "Lack of range validation at the data source allowing excessively high salary entries.",
+        "severity": "medium",
+        "recommended_fix": "Implement range validation at the point of data entry or during ingestion to ensure `salary` values are within acceptable business limits (e.g., 0 to 1,000,000).",
+        "affected_column": "salary",
+        "example_bad_values": [
+          "50000000"
+        ]
+      }
+    ],
+    "overall_severity": "high",
+    "data_health_score": 17
+  }
+}
