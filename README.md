@@ -103,9 +103,12 @@ streamlit run src/dashboard/app.py
   Health score line chart (color-coded by status) and pass-rate bar chart  
 
 - **Latest Run**  
-  Donut chart of pass/fail, failure counts per check, and AI root-cause analysis with severity badges and expandable details  
+  AI root-cause analysis with severity badges and expandable details  
 
 - **Run History**  
   Complete table with timestamps, dataset name, and health scores; downloadable as CSV  
 
+![Monitoring](https://github.com/Akashsingh310/DQ-AI-Guard/blob/dev/img/monitoring.png)
+
 > The dashboard is read-only and does not trigger new validation jobs.
+
