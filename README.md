@@ -5,6 +5,9 @@ AI-Powered Data Quality Guard is a framework for monitoring and improving data q
 
 The system ingests CSV files, runs predefined quality checks, and on failure automatically invokes an AI model to explain the issues, assign severity, and recommend concrete fixes.Results are persisted as timestamped JSON reports and can be explored interactively via monitoring dashboard.
 
+> Note: This project is a functional, usable data quality guard. It is not a fully hardened enterprise‑grade solution.  
+> some pragmatic design choices have been made to keep the codebase approachable and easy to extend.
+
 ## High‑Level Architecture
 > The diagram below shows how a developer starts, defines datasets, runs the validation + AI pipeline, and then explores results in the Streamlit dashboard.
 
@@ -97,6 +100,7 @@ Launch the interactive dashboard:
 ```bash
 streamlit run src/dashboard/app.py
 ```
+>The dashboard will start at local only
 
 ### Features
 
