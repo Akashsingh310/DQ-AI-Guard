@@ -1,3 +1,7 @@
+"""
+DQ AI Guard - Pipeline.
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -14,7 +18,7 @@ if str(_PROJECT_ROOT) not in sys.path:
 
 from src.ai.ai_analyzer import analyze_failures
 from src.reporting.reporter import generate_report
-from src.utils.config_loader import load_config
+from src.utils.config_loader import load_config, get_dataset_config, list_dataset_names
 from src.utils.logger import get_logger
 from src.validation.dq_validator import run_validation
 
@@ -51,8 +55,7 @@ def run_pipeline(config: dict[str, Any]) -> int:
 
     validation_summary = run_validation(df, valid_cfg)
 
-    # Embed the source file name for dashboard filtering
-    validation_summary["source_file"] = Path(input_file).stem  # e.g. "sample_data"
+    validation_summary["source_file"] = config["dataset_name"]
 
     failures = [r for r in validation_summary["results"] if not r["success"]]
 
@@ -92,26 +95,23 @@ def run_pipeline(config: dict[str, Any]) -> int:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="DQ AI Guard – Pipeline Orchestrator")
+    parser = argparse.ArgumentParser(description="DQ AI Guard - Dataset Pipeline")
     parser.add_argument(
-        "--input",
+        "--dataset",
         type=str,
-        default=None,
-        help="Override the input CSV file path specified in config.yaml",
+        required=True,
+        help="Dataset name as defined in config.yaml (datasets list).",
     )
     args = parser.parse_args()
 
-    logger.info("DQ AI Guard initialising.")
+    logger.info("DQ AI Guard initialising for dataset: %s", args.dataset)
+
     try:
-        config = load_config()
+        raw_config = load_config()
+        config = get_dataset_config(raw_config, args.dataset)
     except (FileNotFoundError, KeyError) as exc:
         logger.error("Configuration error: %s", exc)
         sys.exit(_EXIT_FATAL_ERROR)
-
-    # Override input file if provided via command line
-    if args.input:
-        config["data"]["input_file"] = args.input
-        logger.info("Overriding input file with: %s", args.input)
 
     try:
         exit_code = run_pipeline(config)

@@ -1,0 +1,216 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-05-01T11:09:05.661453+00:00",
+  "validation": {
+    "run_timestamp": "2026-05-01T11:08:36.985968+00:00",
+    "total_checks": 11,
+    "passed_checks": 5,
+    "failed_checks": 6,
+    "overall_success": false,
+    "results": [
+      {
+        "check_name": "schema::required_columns",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 5,
+        "percentage_failed": 0.0,
+        "details": {
+          "missing_columns": []
+        }
+      },
+      {
+        "check_name": "null::product_id",
+        "success": true,
+        "failed_count": 1,
+        "total_count": 10,
+        "percentage_failed": 10.0,
+        "details": {
+          "column": "product_id",
+          "actual_null_pct": 10.0,
+          "threshold_pct": 10.0
+        }
+      },
+      {
+        "check_name": "null::product_name",
+        "success": true,
+        "failed_count": 1,
+        "total_count": 10,
+        "percentage_failed": 10.0,
+        "details": {
+          "column": "product_name",
+          "actual_null_pct": 10.0,
+          "threshold_pct": 10.0
+        }
+      },
+      {
+        "check_name": "null::price",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "column": "price",
+          "actual_null_pct": 0.0,
+          "threshold_pct": 10.0
+        }
+      },
+      {
+        "check_name": "null::category",
+        "success": false,
+        "failed_count": 2,
+        "total_count": 10,
+        "percentage_failed": 20.0,
+        "details": {
+          "column": "category",
+          "actual_null_pct": 20.0,
+          "threshold_pct": 10.0
+        }
+      },
+      {
+        "check_name": "null::release_date",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "column": "release_date",
+          "actual_null_pct": 0.0,
+          "threshold_pct": 10.0
+        }
+      },
+      {
+        "check_name": "duplicate::all_columns",
+        "success": false,
+        "failed_count": 1,
+        "total_count": 10,
+        "percentage_failed": 10.0,
+        "details": {
+          "actual_duplicate_pct": 10.0,
+          "threshold_pct": 1.0
+        }
+      },
+      {
+        "check_name": "type::numeric::product_id",
+        "success": false,
+        "failed_count": 9,
+        "total_count": 10,
+        "percentage_failed": 90.0,
+        "details": {
+          "column": "product_id",
+          "non_numeric_pct": 90.0,
+          "threshold_pct": 0.0
+        }
+      },
+      {
+        "check_name": "type::numeric::price",
+        "success": false,
+        "failed_count": 1,
+        "total_count": 10,
+        "percentage_failed": 10.0,
+        "details": {
+          "column": "price",
+          "non_numeric_pct": 10.0,
+          "threshold_pct": 0.0
+        }
+      },
+      {
+        "check_name": "type::date::release_date",
+        "success": false,
+        "failed_count": 1,
+        "total_count": 10,
+        "percentage_failed": 10.0,
+        "details": {
+          "column": "release_date",
+          "unparsable_pct": 10.0
+        }
+      },
+      {
+        "check_name": "range::price",
+        "success": false,
+        "failed_count": 2,
+        "total_count": 10,
+        "percentage_failed": 20.0,
+        "details": {
+          "column": "price",
+          "min_allowed": 0,
+          "max_allowed": 100000
+        }
+      }
+    ],
+    "source_file": "product_data"
+  },
+  "ai_analysis": {
+    "analysis_summary": "Multiple critical data quality issues were identified, including duplicate records, non-numeric price values, and out-of-range prices, alongside null categories and invalid dates, indicating significant upstream data entry or pipeline transformation problems.",
+    "issues": [
+      {
+        "check_name": "duplicate::all_columns",
+        "issue_summary": "10% of the records are exact duplicates, leading to inflated counts and incorrect aggregations.",
+        "root_cause": "The data ingestion process is likely inserting the same records multiple times, or there is a lack of unique constraint enforcement at the source or during loading.",
+        "severity": "high",
+        "recommended_fix": "Implement a deduplication step in the data pipeline based on a natural key (e.g., product_id + release_date) or enforce unique constraints on the target table to prevent duplicate insertions.",
+        "affected_column": null,
+        "example_bad_values": []
+      },
+      {
+        "check_name": "type::numeric::price",
+        "issue_summary": "10% of 'price' values are non-numeric strings, preventing numerical calculations and potentially causing pipeline failures.",
+        "root_cause": "Upstream data entry errors or an ETL process that allows non-numeric values into a field intended for numbers.",
+        "severity": "high",
+        "recommended_fix": "Implement strict type validation and casting for the 'price' column during data ingestion, rejecting or quarantining records with non-numeric values. Provide clear error feedback to the data source.",
+        "affected_column": "price",
+        "example_bad_values": [
+          "high"
+        ]
+      },
+      {
+        "check_name": "range::price",
+        "issue_summary": "20% of 'price' values are outside the expected range of 0 to 100,000, indicating potential data entry errors or business rule violations.",
+        "root_cause": "Lack of validation at the data entry point or during upstream transformations to enforce business rules for price ranges.",
+        "severity": "medium",
+        "recommended_fix": "Enforce business rules for price ranges (e.g., price >= 0 and price <= 100000) at the data source or during the initial ingestion phase, rejecting or flagging out-of-range values.",
+        "affected_column": "price",
+        "example_bad_values": [
+          "-5.00",
+          "999999"
+        ]
+      },
+      {
+        "check_name": "null::category",
+        "issue_summary": "20% of 'category' values are null, which can lead to incomplete data segmentation and inaccurate aggregations.",
+        "root_cause": "Missing data during data entry or an upstream process that does not enforce 'category' as a mandatory field.",
+        "severity": "medium",
+        "recommended_fix": "Implement a 'not null' constraint or a default value assignment for the 'category' column during data ingestion. Work with data providers to ensure categories are always supplied.",
+        "affected_column": "category",
+        "example_bad_values": [
+          null
+        ]
+      },
+      {
+        "check_name": "type::date::release_date",
+        "issue_summary": "10% of 'release_date' values are unparsable, hindering time-series analysis and date-based filtering.",
+        "root_cause": "Inconsistent date formatting or manual data entry errors in the upstream system.",
+        "severity": "medium",
+        "recommended_fix": "Implement strict date parsing with a defined format (e.g., YYYY-MM-DD) during ingestion, rejecting or quarantining records with unparsable date values. Standardize date formats at the source.",
+        "affected_column": "release_date",
+        "example_bad_values": [
+          "invalid"
+        ]
+      },
+      {
+        "check_name": "type::numeric::product_id",
+        "issue_summary": "The 'product_id' column, which contains alphanumeric identifiers, is incorrectly being checked for numeric type, resulting in a 90% failure rate.",
+        "root_cause": "Misconfiguration of the data quality check, expecting a numeric type for a column that is clearly designed to hold alphanumeric string identifiers. A null value was also observed.",
+        "severity": "low",
+        "recommended_fix": "Update the data quality check definition for 'product_id' to validate for string/alphanumeric type or a specific ID pattern, rather than numeric. Additionally, consider adding a 'not null' check for 'product_id' if it's a primary identifier.",
+        "affected_column": "product_id",
+        "example_bad_values": [
+          "P1001",
+          "P1002",
+          null
+        ]
+      }
+    ],
+    "overall_severity": "high",
+    "data_health_score": 38
+  }
+}
