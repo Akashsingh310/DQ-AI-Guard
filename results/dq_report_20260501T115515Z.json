@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-05-01T10:05:29.063609+00:00",
+  "generated_at": "2026-05-01T11:55:15.632865+00:00",
   "validation": {
-    "run_timestamp": "2026-05-01T10:04:43.355607+00:00",
+    "run_timestamp": "2026-05-01T11:54:48.121996+00:00",
     "total_checks": 15,
     "passed_checks": 6,
     "failed_checks": 9,
@@ -184,17 +184,17 @@
         }
       }
     ],
-    "source_file": "sample_data_2"
+    "source_file": "customer_data"
   },
   "ai_analysis": {
-    "analysis_summary": "The dataset exhibits critical data quality issues including missing primary keys, duplicate records, and severe data type and format inconsistencies across multiple columns, indicating significant upstream data entry or pipeline processing flaws.",
+    "analysis_summary": "The dataset exhibits significant data quality issues across multiple critical columns, including null primary keys, duplicate records, incorrect data types, and out-of-range values, indicating fundamental problems in upstream data generation or ingestion processes.",
     "issues": [
       {
         "check_name": "null::customer_id",
-        "issue_summary": "The `customer_id` column contains null values, which is critical as it serves as a primary identifier for records.",
-        "root_cause": "Upstream data source allows nulls for `customer_id` or an extraction process failed to retrieve the identifier for some records.",
+        "issue_summary": "The `customer_id` column contains null values, violating its expected role as a primary identifier and impacting data integrity.",
+        "root_cause": "Data source is providing records with missing `customer_id` values, indicating a potential gap in data generation or extraction logic.",
         "severity": "high",
-        "recommended_fix": "Enforce a non-null constraint on `customer_id` at the data source level. If not possible, implement a data ingestion rule to reject records with null `customer_id` or generate a unique fallback identifier.",
+        "recommended_fix": "Enforce a NOT NULL constraint on `customer_id` at the ingestion layer. Investigate the upstream source system to understand why `customer_id` is missing for some records and implement a fix there.",
         "affected_column": "customer_id",
         "example_bad_values": [
           null
@@ -202,10 +202,10 @@
       },
       {
         "check_name": "duplicate::all_columns",
-        "issue_summary": "Duplicate records exist across all columns, specifically for customer '2006', leading to inflated counts and incorrect aggregations in downstream systems.",
-        "root_cause": "Upstream system generating duplicate entries or an ingestion process that lacks idempotency, allowing the same record to be processed multiple times.",
+        "issue_summary": "The dataset contains exact duplicate rows, leading to inflated record counts and incorrect aggregations.",
+        "root_cause": "The ingestion process is likely re-processing or failing to identify and de-duplicate records, possibly due to an idempotent issue or lack of a unique key enforcement.",
         "severity": "high",
-        "recommended_fix": "Implement a deduplication step during data ingestion, using a combination of columns (e.g., `customer_id`, `signup_date`, `email`) as a natural key to identify and remove duplicates.",
+        "recommended_fix": "Implement a deduplication step in the data pipeline, using a combination of `customer_id` and `signup_date` as a natural key, or a hash of all relevant columns, to ensure uniqueness before loading into the target system.",
         "affected_column": null,
         "example_bad_values": [
           {
@@ -220,32 +220,22 @@
       },
       {
         "check_name": "type::numeric::salary",
-        "issue_summary": "The `salary` column contains non-numeric values (e.g., 'not_a_number'), preventing proper numerical operations and causing downstream type conversion errors.",
-        "root_cause": "Upstream system allowing free-form text input for a numeric field or incorrect data type mapping during extraction.",
+        "issue_summary": "The `salary` column contains non-numeric values and values outside the expected business range (0 to 1,000,000), preventing proper numerical operations and potentially causing pipeline failures.",
+        "root_cause": "Upstream data source is providing `salary` values in an incorrect format (e.g., text instead of numbers) and data entry errors or incorrect data generation producing unrealistically high salary values.",
         "severity": "high",
-        "recommended_fix": "Implement strict schema validation and type casting for the `salary` column during ingestion, rejecting or quarantining records where `salary` is not a valid number.",
+        "recommended_fix": "Implement robust type casting and range validation for the `salary` column during ingestion. Records with non-numeric or out-of-range `salary` values should be quarantined for manual review or rejected.",
         "affected_column": "salary",
         "example_bad_values": [
-          "not_a_number"
-        ]
-      },
-      {
-        "check_name": "type::date::signup_date",
-        "issue_summary": "The `signup_date` column contains inconsistent date formats (e.g., 'YYYY/MM/DD' instead of 'YYYY-MM-DD'), leading to parsing failures in downstream systems.",
-        "root_cause": "Upstream system storing dates in multiple formats or inconsistent data entry practices.",
-        "severity": "high",
-        "recommended_fix": "Standardize the date format at the source system to 'YYYY-MM-DD'. If not feasible, implement robust date parsing logic during ingestion that can handle all expected date formats (e.g., 'YYYY-MM-DD', 'YYYY/MM/DD').",
-        "affected_column": "signup_date",
-        "example_bad_values": [
-          "2024/04/20"
+          "not_a_number",
+          "50000000"
         ]
       },
       {
         "check_name": "null::age",
-        "issue_summary": "The `age` column contains null values and values outside the expected range (0-120), specifically negative and excessively high ages, impacting demographic analysis and business logic.",
-        "root_cause": "Lack of validation at the data source allowing nulls, negative values, or excessively high values for age.",
+        "issue_summary": "The `age` column contains null values and values outside the plausible range (0 to 120 years), impacting demographic analysis and calculations.",
+        "root_cause": "Missing data for `age` from the source system and data entry errors or system glitches generating invalid age values (negative or excessively high).",
         "severity": "medium",
-        "recommended_fix": "Implement data validation at the source to ensure `age` is non-null and within a reasonable range (e.g., 0-120). During ingestion, apply a transformation to handle nulls (e.g., imputation) and flag/quarantine out-of-range values.",
+        "recommended_fix": "Investigate the upstream source system for missing `age` data. Implement a range validation step for the `age` column during ingestion. Records with null or invalid age values should be flagged, corrected, or quarantined.",
         "affected_column": "age",
         "example_bad_values": [
           null,
@@ -255,10 +245,10 @@
       },
       {
         "check_name": "null::email",
-        "issue_summary": "The `email` column contains null values and entries that do not conform to a standard email pattern, affecting communication and user identification processes.",
-        "root_cause": "Lack of validation at the data source allowing nulls or malformed email addresses.",
+        "issue_summary": "The `email` column contains null values and values that do not conform to a standard email address pattern, hindering communication and marketing efforts.",
+        "root_cause": "Missing `email` data from the source system and invalid email addresses being entered or generated.",
         "severity": "medium",
-        "recommended_fix": "Implement client-side and server-side validation for email format and non-null constraint at the point of data entry. During ingestion, clean or quarantine records with invalid email formats.",
+        "recommended_fix": "Investigate the upstream source system for missing `email` data. Implement a regex-based validation step for the `email` column during ingestion. Null or invalid email addresses should be flagged, quarantined, or corrected if possible.",
         "affected_column": "email",
         "example_bad_values": [
           null,
@@ -266,18 +256,18 @@
         ]
       },
       {
-        "check_name": "range::salary",
-        "issue_summary": "The `salary` column contains values exceeding the maximum allowed threshold (1,000,000), potentially skewing financial metrics and aggregations.",
-        "root_cause": "Lack of range validation at the data source allowing excessively high salary entries.",
+        "check_name": "type::date::signup_date",
+        "issue_summary": "The `signup_date` column contains values in inconsistent or unparsable date formats, affecting time-series analysis and filtering.",
+        "root_cause": "The upstream system is providing `signup_date` in varying formats (e.g., `YYYY/MM/DD` instead of `YYYY-MM-DD`).",
         "severity": "medium",
-        "recommended_fix": "Implement range validation at the point of data entry or during ingestion to ensure `salary` values are within acceptable business limits (e.g., 0 to 1,000,000).",
-        "affected_column": "salary",
+        "recommended_fix": "Implement a robust date parsing function during ingestion that can handle multiple expected date formats or enforce a single `YYYY-MM-DD` format at the source system level.",
+        "affected_column": "signup_date",
         "example_bad_values": [
-          "50000000"
+          "2024/04/20"
         ]
       }
     ],
     "overall_severity": "high",
-    "data_health_score": 17
+    "data_health_score": 25
   }
 }

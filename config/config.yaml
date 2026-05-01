@@ -22,8 +22,8 @@ logging:
 
 # Per‑dataset definitions
 datasets:
-  - name: "sample_data"
-    input_file: "data/sample_data.csv"
+  - name: "customer_data"
+    input_file: "data/customer_data.csv"
     results_dir: "results"
     validation:
       thresholds:
@@ -54,69 +54,6 @@ datasets:
       patterns:
         email: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
 
-  - name: "sample_data_2"
-    input_file: "data/sample_data_2.csv"
-    results_dir: "results"
-    validation:
-      thresholds:
-        max_null_percentage: 0.05
-        max_duplicate_percentage: 0.02
-        max_non_numeric_percentage: 0.00
-      columns:
-        required:
-          - customer_id
-          - age
-          - salary
-          - email
-          - signup_date
-          - country
-        numeric:
-          - customer_id
-          - age
-          - salary
-        date:
-          - signup_date
-      ranges:
-        age:
-          min: 0
-          max: 120
-        salary:
-          min: 0
-          max: 1000000
-      patterns:
-        email: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
-
-  - name: "sample_data_3"
-    input_file: "data/sample_data_3.csv"
-    results_dir: "results"
-    validation:
-      thresholds:
-        max_null_percentage: 0.05
-        max_duplicate_percentage: 0.02
-        max_non_numeric_percentage: 0.00
-      columns:
-        required:
-          - customer_id
-          - age
-          - salary
-          - email
-          - signup_date
-          - country
-        numeric:
-          - customer_id
-          - age
-          - salary
-        date:
-          - signup_date
-      ranges:
-        age:
-          min: 0
-          max: 120
-        salary:
-          min: 0
-          max: 1000000
-      patterns:
-        email: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
 
   - name: "product_data"
     input_file: "data/product_data.csv"
