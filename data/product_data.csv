@@ -1,0 +1,11 @@
+product_id,product_name,price,category,release_date
+P1001,Widget,19.99,Electronics,2023-05-15
+P1002,Gadget,24.99,Electronics,2023-06-10
+P1003,,15.50,Office,2023-07-22
+P1004,SuperWidget,high,Electronics,2023-08-01
+P1005,Thingamajig,-5.00,Toys,2023-09-14
+P1006,Gizmo,120.00,,2023-10-30
+P1006,Gizmo,120.00,,2023-10-30
+P1007,MegaWidget,999999,Electronics,invalid
+P1008,NanoThing,0.01,Electronics,2023-12-01
+,Unknown,50.00,Misc,2024-01-05

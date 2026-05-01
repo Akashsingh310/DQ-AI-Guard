@@ -39,7 +39,6 @@ st.set_page_config(
     },
 )
 
-
 st.markdown(
     """
     <style>
@@ -108,10 +107,12 @@ def main():
     st.title("DQ AI Guard – Quality Monitoring")
     st.caption("Continuous validation and AI‑powered root‑cause analysis across datasets.")
 
-
+    # --- Load config (multi‑dataset aware) ---
     try:
-        config = load_config()
-        results_dir = Path(config["data"]["results_dir"])
+        raw_config = load_config()
+        datasets = raw_config.get("datasets", [])
+        # Use results_dir from the first dataset; fallback to "results"
+        results_dir = Path(datasets[0].get("results_dir", "results")) if datasets else Path("results")
     except Exception as exc:
         st.error(f"Configuration error: {exc}")
         return
@@ -128,10 +129,9 @@ def main():
     source_files = sorted(df["Source File"].unique())
     multiple_sources = len(source_files) > 1
 
-   
+    # --- Sidebar filters ---
     st.sidebar.header("Filters")
 
-   
     if multiple_sources:
         selected_source = st.sidebar.selectbox("Dataset", options=source_files, index=0)
         df = df[df["Source File"] == selected_source]
@@ -153,14 +153,14 @@ def main():
     if not show_successful:
         df = df[df["Overall Success"] == False]
 
-   
+    # --- Determine latest report for the current filter ---
     if not df.empty:
         latest_file = df.iloc[0]["File"]
         latest_report = next((r for r in reports if r["_file"] == latest_file), None)
     else:
         latest_report = None
 
-   
+    # --- Metrics cards ---
     col1, col2, col3, col4 = st.columns(4)
     total_runs = len(df)
     failed_runs = len(df[df["Overall Success"] == False])
@@ -174,7 +174,7 @@ def main():
 
     st.markdown("---")
 
-  
+    # --- Health score trend ---
     st.subheader("Data Health Score Over Time")
     trend_df = df.dropna(subset=["AI Health Score"]).sort_values("Timestamp")
     if not trend_df.empty:
@@ -225,7 +225,7 @@ def main():
     else:
         st.info("No runs available for the selected filters.")
 
-   
+    # --- Failed checks detail (uses filtered latest_report) ---
     st.subheader("Failed Checks (Latest Run)")
     if latest_report:
         failed_details = [r for r in latest_report["validation"].get("results", []) if not r.get("success")]
@@ -240,7 +240,7 @@ def main():
     else:
         st.info("No data.")
 
-   
+    # --- AI Analysis (uses filtered latest_report) ---
     st.subheader("AI Root‑Cause Analysis (Latest Run)")
     if latest_report:
         ai = latest_report.get("ai_analysis", {})
@@ -266,14 +266,14 @@ def main():
     else:
         st.info("No data.")
 
-   
+    # --- Historical runs table ---
     st.subheader("Historical Runs")
     def color_failed(val: bool) -> str:
         return "color: red" if not val else "color: green"
     styled_df = df.style.applymap(color_failed, subset=["Overall Success"])
     st.dataframe(styled_df, use_container_width=True)
 
-    
+    # Download filtered data
     csv = df.to_csv(index=False).encode("utf-8")
     st.download_button(
         label="Download filtered runs as CSV",
