@@ -58,3 +58,56 @@ export GEMINI_API_KEY="your-key-here"
 ```
 
 > Alternatively, you can store keys in a `.env` file.
+
+## Configuration
+
+All settings live in config/config.yaml. The file is divided into global properties (AI, reporting, logging) and a list of dataset definitions. Add as many dataset entries as needed, each with its own columns and rules.
+
+
+![Config file](https://github.com/Akashsingh310/DQ-AI-Guard/blob/dev/img/config.png)
+
+
+## Running the Pipeline
+
+Execute the pipeline from the project root:
+
+```bash
+python src/main.py --dataset customer_data
+```
+
+### What Happens
+
+- Loads the CSV file for the dataset  
+- Runs all validation checks  
+- If any check fails and AI is enabled, calls the configured LLM for root-cause analysis  
+- Prints a color-coded console summary  
+- Writes a JSON report to `results/dq_report_<timestamp>.json`  
+
+## Monitoring Dashboard
+
+Launch the interactive dashboard:
+
+```bash
+streamlit run src/dashboard/app.py
+```
+
+Open your browser at http://localhost:8501
+
+### Features
+
+- **Sidebar Filters**  
+  Dataset selection (if multiple exist), time range, and option to show/hide successful runs  
+
+- **KPI Cards**  
+  Total runs, failed runs, latest health score, and current severity  
+
+- **Trend Charts**  
+  Health score line chart (color-coded by status) and pass-rate bar chart  
+
+- **Latest Run**  
+  Donut chart of pass/fail, failure counts per check, and AI root-cause analysis with severity badges and expandable details  
+
+- **Run History**  
+  Complete table with timestamps, dataset name, and health scores; downloadable as CSV  
+
+> The dashboard is read-only and does not trigger new validation jobs.
