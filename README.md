@@ -53,6 +53,13 @@ pip install -r requirements.txt
 ```
 
 ### Set Environment Variables
+
+Windows
+```bash
+set GEMINI_API_KEY=your-key-here
+```
+
+macOS
 ```bash
 export GEMINI_API_KEY="your-key-here"
 ```
