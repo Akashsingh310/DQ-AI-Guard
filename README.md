@@ -61,7 +61,7 @@ export GEMINI_API_KEY="your-key-here"
 
 ## Configuration
 
-All settings live in config/config.yaml. The file is divided into global properties (AI, reporting, logging) and a list of dataset definitions. Add as many dataset entries as needed, each with its own columns and rules.
+All settings are defined in `config/config.yaml`. Add your CSV file to the `data/` folder and update the configuration accordingly by defining the dataset, required columns, validation rules, and optional AI settings.
 
 
 ![Config file](https://github.com/Akashsingh310/DQ-AI-Guard/blob/dev/img/config.png)
