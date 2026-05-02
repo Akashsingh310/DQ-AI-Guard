@@ -1,0 +1,224 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-05-02T02:40:32.833642+00:00",
+  "validation": {
+    "run_timestamp": "2026-05-02T02:40:15.984025+00:00",
+    "total_checks": 11,
+    "passed_checks": 5,
+    "failed_checks": 6,
+    "overall_success": false,
+    "results": [
+      {
+        "check_name": "schema::required_columns",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 5,
+        "percentage_failed": 0.0,
+        "details": {
+          "missing_columns": []
+        }
+      },
+      {
+        "check_name": "null::product_id",
+        "success": true,
+        "failed_count": 1,
+        "total_count": 10,
+        "percentage_failed": 10.0,
+        "details": {
+          "column": "product_id",
+          "actual_null_pct": 10.0,
+          "threshold_pct": 10.0
+        }
+      },
+      {
+        "check_name": "null::product_name",
+        "success": true,
+        "failed_count": 1,
+        "total_count": 10,
+        "percentage_failed": 10.0,
+        "details": {
+          "column": "product_name",
+          "actual_null_pct": 10.0,
+          "threshold_pct": 10.0
+        }
+      },
+      {
+        "check_name": "null::price",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "column": "price",
+          "actual_null_pct": 0.0,
+          "threshold_pct": 10.0
+        }
+      },
+      {
+        "check_name": "null::category",
+        "success": false,
+        "failed_count": 2,
+        "total_count": 10,
+        "percentage_failed": 20.0,
+        "details": {
+          "column": "category",
+          "actual_null_pct": 20.0,
+          "threshold_pct": 10.0
+        }
+      },
+      {
+        "check_name": "null::release_date",
+        "success": true,
+        "failed_count": 0,
+        "total_count": 10,
+        "percentage_failed": 0.0,
+        "details": {
+          "column": "release_date",
+          "actual_null_pct": 0.0,
+          "threshold_pct": 10.0
+        }
+      },
+      {
+        "check_name": "duplicate::all_columns",
+        "success": false,
+        "failed_count": 2,
+        "total_count": 10,
+        "percentage_failed": 20.0,
+        "details": {
+          "actual_duplicate_pct": 20.0,
+          "threshold_pct": 1.0
+        }
+      },
+      {
+        "check_name": "type::numeric::product_id",
+        "success": false,
+        "failed_count": 9,
+        "total_count": 10,
+        "percentage_failed": 90.0,
+        "details": {
+          "column": "product_id",
+          "non_numeric_pct": 90.0,
+          "threshold_pct": 0.0
+        }
+      },
+      {
+        "check_name": "type::numeric::price",
+        "success": false,
+        "failed_count": 1,
+        "total_count": 10,
+        "percentage_failed": 10.0,
+        "details": {
+          "column": "price",
+          "non_numeric_pct": 10.0,
+          "threshold_pct": 0.0
+        }
+      },
+      {
+        "check_name": "type::date::release_date",
+        "success": false,
+        "failed_count": 1,
+        "total_count": 10,
+        "percentage_failed": 10.0,
+        "details": {
+          "column": "release_date",
+          "unparsable_pct": 10.0
+        }
+      },
+      {
+        "check_name": "range::price",
+        "success": false,
+        "failed_count": 2,
+        "total_count": 10,
+        "percentage_failed": 20.0,
+        "details": {
+          "column": "price",
+          "min_allowed": 0,
+          "max_allowed": 100000
+        }
+      }
+    ],
+    "source_file": "product_data"
+  },
+  "ai_analysis": {
+    "analysis_summary": "Multiple critical data quality issues detected, including widespread non-numeric product IDs, duplicate records, invalid price and date formats, out-of-range prices, and missing category information.",
+    "issues": [
+      {
+        "check_name": "type::numeric::product_id",
+        "issue_summary": "The 'product_id' column, expected to be numeric, contains alphanumeric strings in 90% of records.",
+        "root_cause": "The 'product_id' column is designed as an alphanumeric identifier (e.g., 'P1001') but is being validated against a numeric type check, indicating a mismatch between data definition and validation rule.",
+        "severity": "high",
+        "recommended_fix": "Reconfigure the data quality check for 'product_id' to validate for string or alphanumeric format, or update the data schema definition to reflect its true type. If 'product_id' is strictly required to be numeric, the upstream system must be modified to generate numeric-only identifiers.",
+        "affected_column": "product_id",
+        "example_bad_values": [
+          "P1001",
+          "P1002",
+          null
+        ]
+      },
+      {
+        "check_name": "duplicate::all_columns",
+        "issue_summary": "20% of the dataset consists of exact duplicate rows.",
+        "root_cause": "Upstream data ingestion or processing system is producing redundant records, possibly due to retry mechanisms without idempotency or incorrect join logic.",
+        "severity": "high",
+        "recommended_fix": "Implement a deduplication step in the ETL pipeline, using a unique key (e.g., a combination of 'product_id' and 'release_date' if 'product_id' alone isn't unique, or all columns if records are truly identical) to ensure only distinct records are loaded.",
+        "affected_column": null,
+        "example_bad_values": [
+          {
+            "product_id": "P1006",
+            "product_name": "Gizmo",
+            "price": "120.00",
+            "category": null,
+            "release_date": "2023-10-30"
+          }
+        ]
+      },
+      {
+        "check_name": "type::numeric::price",
+        "issue_summary": "The 'price' column contains non-numeric values, preventing numerical operations.",
+        "root_cause": "Data entry error or lack of input validation in the upstream system allowed a non-numeric string ('high') to be stored in a numeric field.",
+        "severity": "high",
+        "recommended_fix": "Implement strict data type validation at the source system or during the ingestion process to ensure 'price' values are always numeric. Records with invalid price formats should be rejected or quarantined for manual review.",
+        "affected_column": "price",
+        "example_bad_values": [
+          "high"
+        ]
+      },
+      {
+        "check_name": "null::category",
+        "issue_summary": "20% of records have null values in the 'category' column, exceeding the allowed threshold.",
+        "root_cause": "Missing data during data entry or an upstream transformation failed to populate the 'category' field for some products.",
+        "severity": "medium",
+        "recommended_fix": "Enforce 'category' as a mandatory field at the data source. Alternatively, implement a data imputation strategy (e.g., assign a default 'Unknown' category) or reject records with null categories during ingestion.",
+        "affected_column": "category",
+        "example_bad_values": [
+          null
+        ]
+      },
+      {
+        "check_name": "range::price",
+        "issue_summary": "20% of 'price' values are outside the acceptable range of 0 to 100,000.",
+        "root_cause": "Business rules for price range are not enforced at the data entry point or during upstream data processing, leading to negative and excessively high price values.",
+        "severity": "medium",
+        "recommended_fix": "Implement range validation at the data source or during the ingestion process to ensure 'price' values fall within the defined business constraints (0 to 100,000). Records violating this rule should be flagged or rejected.",
+        "affected_column": "price",
+        "example_bad_values": [
+          "-5.00",
+          "999999"
+        ]
+      },
+      {
+        "check_name": "type::date::release_date",
+        "issue_summary": "The 'release_date' column contains an unparsable date string.",
+        "root_cause": "Data entry error or lack of date format validation in the upstream system allowed an invalid date string ('invalid') to be stored.",
+        "severity": "medium",
+        "recommended_fix": "Implement strict date format validation (e.g., YYYY-MM-DD) at the data source or during ingestion. Records with unparsable dates should be rejected or quarantined.",
+        "affected_column": "release_date",
+        "example_bad_values": [
+          "invalid"
+        ]
+      }
+    ],
+    "overall_severity": "high",
+    "data_health_score": 35
+  }
+}
