@@ -6,12 +6,14 @@ Uses strict prompt engineering to force a structured JSON response.
 from __future__ import annotations
 
 import json
+import math
 import os
 import re
 import time
 from typing import Any
 
-import pandas as pd
+import polars as pl
+
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -79,18 +81,15 @@ in the system prompt."""
 # ---------------------------------------------------------------------------
 # Helper functions
 # ---------------------------------------------------------------------------
-def _serialise_sample(df: pd.DataFrame, n: int) -> list[dict[str, Any]]:
+def _serialise_sample(df: pl.DataFrame, n: int) -> list[dict[str, Any]]:
     """Extract first n rows as JSON-safe dicts, normalising NaN/NaT."""
-    raw = df.head(n).to_dict(orient="records")
+    raw = df.head(n).to_dicts()
 
     def _coerce(v: Any) -> Any:
         if v is None:
             return None
-        try:
-            if pd.isna(v):
-                return None
-        except (TypeError, ValueError):
-            pass
+        if isinstance(v, float) and math.isnan(v):
+            return None
         return v
 
     return [{k: _coerce(v) for k, v in row.items()} for row in raw]
@@ -242,7 +241,7 @@ def list_available_gemini_models(api_key: str) -> list[str]:
 # ---------------------------------------------------------------------------
 def analyze_failures(
     failures: list[dict[str, Any]],
-    df: pd.DataFrame,
+    df: pl.DataFrame,
     ai_config: dict[str, Any],
 ) -> dict[str, Any]:
     """

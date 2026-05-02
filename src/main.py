@@ -9,17 +9,21 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import pandas as pd
 from dotenv import load_dotenv
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
+from src.data.loader import load_csv_dataset
 from src.ai.ai_analyzer import analyze_failures
 from src.reporting.reporter import generate_report
 from src.utils.config_loader import load_config, get_dataset_config, list_dataset_names
 from src.utils.logger import get_logger
+from src.utils.run_cache import (
+    dataset_unchanged_since_last_run,
+    record_successful_pipeline_run,
+)
 from src.validation.dq_validator import run_validation
 
 load_dotenv()
@@ -30,20 +34,6 @@ _EXIT_FAILURE     = 1
 _EXIT_FATAL_ERROR = 2
 
 
-def _load_dataframe(input_file: str) -> pd.DataFrame:
-    path = Path(input_file)
-    if not path.exists():
-        logger.error("Input file not found: %s", path)
-        sys.exit(_EXIT_FATAL_ERROR)
-    try:
-        df = pd.read_csv(path, dtype=str)
-    except Exception as exc:
-        logger.error("Failed to read input file: %s", exc)
-        sys.exit(_EXIT_FATAL_ERROR)
-    logger.info("Data loaded: %d rows, %d columns.", len(df), len(df.columns))
-    return df
-
-
 def run_pipeline(config: dict[str, Any]) -> int:
     data_cfg     = config["data"]
     valid_cfg    = config["validation"]
@@ -51,7 +41,15 @@ def run_pipeline(config: dict[str, Any]) -> int:
     reporting_cfg = config.get("reporting", {})
 
     input_file = data_cfg["input_file"]
-    df = _load_dataframe(input_file)
+    path = Path(input_file)
+    if not path.exists():
+        logger.error("Input file not found: %s", path)
+        sys.exit(_EXIT_FATAL_ERROR)
+    try:
+        df = load_csv_dataset(path)
+    except Exception as exc:
+        logger.error("Failed to read input file: %s", exc)
+        sys.exit(_EXIT_FATAL_ERROR)
 
     validation_summary = run_validation(df, valid_cfg)
 
@@ -84,11 +82,19 @@ def run_pipeline(config: dict[str, Any]) -> int:
         logger.info("AI analysis disabled in config.")
         ai_analysis = {}
 
-    generate_report(
+    report_path = generate_report(
         validation_summary=validation_summary,
         ai_analysis=ai_analysis,
         results_dir=data_cfg["results_dir"],
         reporting_config=reporting_cfg,
+    )
+
+    record_successful_pipeline_run(
+        dataset_name=config["dataset_name"],
+        input_path=path,
+        validation_config=valid_cfg,
+        results_dir=Path(data_cfg["results_dir"]),
+        report_path=report_path,
     )
 
     return _EXIT_SUCCESS if validation_summary["overall_success"] else _EXIT_FAILURE
@@ -102,6 +108,11 @@ def main() -> None:
         required=True,
         help="Dataset name as defined in config.yaml (datasets list).",
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Run even if the input file and validation config match the last run.",
+    )
     args = parser.parse_args()
 
     logger.info("DQ AI Guard initialising for dataset: %s", args.dataset)
@@ -112,6 +123,32 @@ def main() -> None:
     except (FileNotFoundError, KeyError) as exc:
         logger.error("Configuration error: %s", exc)
         sys.exit(_EXIT_FATAL_ERROR)
+
+    data_cfg = config["data"]
+    input_path = Path(data_cfg["input_file"])
+    results_dir = Path(data_cfg["results_dir"])
+    valid_cfg = config["validation"]
+
+    if not args.force and input_path.is_file():
+        unchanged, cache_entry = dataset_unchanged_since_last_run(
+            config["dataset_name"],
+            input_path,
+            valid_cfg,
+            results_dir,
+        )
+        if unchanged and cache_entry:
+            last_report = cache_entry.get("last_report_path") or cache_entry.get(
+                "last_report", ""
+            )
+            logger.info(
+                "Skipping pipeline: input file and validation config unchanged since last run."
+            )
+            print(
+                "\n  Dataset unchanged (same file size, modification time, and validation rules).\n"
+                f"  Last report: {last_report}\n"
+                "  Run with --force to re-run validation and regenerate the report.\n"
+            )
+            sys.exit(_EXIT_SUCCESS)
 
     try:
         exit_code = run_pipeline(config)
