@@ -11,6 +11,7 @@ The system ingests CSV files, runs predefined quality checks, and on failure aut
 > The diagram below shows how a developer starts, defines datasets, runs the validation + AI pipeline, and then explores results in the Streamlit dashboard.
 
 
+![System Architecture](https://github.com/Akashsingh310/DQ-AI-Guard/blob/dev/img/high-level_new.png)
 
 ## Features
 
